@@ -1,0 +1,49 @@
+name: Create GitHub Release
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          TAG=$(git for-each-ref --sort=-creatordate --format '%(refname:short)' refs/tags | head -n1)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog for this tag
+        id: extract_changelog
+        run: |
+          TAG="${{ steps.get_tag.outputs.tag }}"
+          TAG_NO_V="${TAG#v}"
+          TAG_ESCAPED=$(printf '%s\n' "$TAG_NO_V" | sed 's/[][(){}.^$*+?\\/]/\\&/g')
+          awk -v tag="$TAG_ESCAPED" '
+            $0 ~ "^## \\[" tag "\\]" {in_block=1}
+            in_block {
+            if ($0 ~ /^## \[[^]]+\]/ && $0 !~ ("^## \\[" tag "\\]")) exit
+            print
+          }
+          ' changelog.md > RELEASE_BODY.md
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          release_name: Release ${{ steps.get_tag.outputs.tag }}
+          body_path: RELEASE_BODY.md
+          draft: false
+          prerelease: false
