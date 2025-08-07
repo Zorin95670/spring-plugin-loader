@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.zorin95670</groupId>
   <artifactId>spring-plugin-loader</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
   <name>spring-plugin-loader</name>
   <description>A Spring Boot library for dynamically loading and registering plugins from external JARs at runtime.
         It automatically scans for Spring-annotated classes, loads plugin configuration, and integrates plugin beans
